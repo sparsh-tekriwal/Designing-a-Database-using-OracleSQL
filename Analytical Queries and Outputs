@@ -1,0 +1,674 @@
+B. Question 1: 
+
+SQL> BREAK ON EMPLOYEE
+SQL> COLUMN "Employee" FORMAT A30
+SQL> COLUMN "Skill" FORMAT A30
+SQL> COLUMN  "Training#" FORMAT A10
+SQL> COLUMN "Most_recent" FORMAT A15
+SQL> COLUMN "Months#_most_recent" FORMAT A20
+SQL>
+SQL>  SELECT EMPLOYEE as "Employee", NVL(Skill, 'NA') as "Skill",
+  2        NVL(Training#, 'NA') as "Training#",
+  3        NVL(Most_recent, 'NA') as "Most_recent",
+  4        NVL(Months#_most_recent, 'NA') as "Months#_most_recent"
+  5     FROM (SELECT Emp_Num || ': ' || Emp_Last || ' ' || Emp_First AS "EMPLOYEE" FROM Employee)
+  6     LEFT JOIN
+  7     (SELECT Emp_Num || ': ' || Emp_Last || ' ' || Emp_First AS "EMPLOYEE",
+  8         To_CHAR(Code) || ':'  || Description as Skill,
+  9         TO_CHAR(COUNT(Date_Acquired)) as Training#,
+ 10        TO_CHAR(MAX(Date_Acquired)) as Most_recent,
+ 11        TO_CHAR(TRUNC(MONTHS_BETWEEN(SYSDATE, MAX(Date_Acquired)), 0)) AS Months#_most_recent
+ 12     FROM Employee LEFT JOIN Training USING (Emp_Num)
+ 13       JOIN Skill USING (Code)
+ 14     GROUP BY Emp_Num, Emp_Last, Emp_First, Code, Description) USING (EMPLOYEE)
+ 15     ORDER BY EMPLOYEE;
+
+Employee                       Skill                          Training#  Most_recent     Months#_most_recent
+------------------------------ ------------------------------ ---------- --------------- --------------------
+101: Mitchell Tom              NA                             NA         NA              NA
+102: Abdiev Jamol              2:Data Analysis                2          05-JUN-19       5
+                               1:Negotiation                  1          01-DEC-18       12
+103: Han Zhang                 6:Big Data                     2          25-JUN-19       5
+                               1:Negotiation                  1          02-DEC-18       12
+104: Agarwal Sonali            5:Tableau                      2          18-JUL-19       4
+                               2:Data Analysis                1          03-DEC-18       12
+105: Julian Annie              NA                             NA         NA              NA
+106: Shah Parth                NA                             NA         NA              NA
+107: Singh Jaskeet             7:Deep Learning                1          15-NOV-17       24
+108: Ziling Xu                 3:Business Intelligence        1          15-FEB-18       21
+109: Miller Sarah              5:Tableau                      1          05-JUL-18       16
+110: Vasa Maitri               5:Tableau                      1          07-OCT-18       13
+111: Clay Karen                6:Big Data                     1          11-NOV-19       0
+112: Gupta Yash                2:Data Analysis                1          25-NOV-19       0
+                               6:Big Data                     1          11-NOV-19       0
+113: Kosyrkov Cassie           2:Data Analysis                1          25-NOV-19       0
+
+17 rows selected.
+Question 2: 
+
+SQL> COLUMN Employee FORMAT a30
+SQL> COLUMN Department FORMAT a20
+SQL>
+SQL> select level as "Level", LPAD(' ', 3*(level-1)) || EMP_NUM ||': '|| EMP_FIRST ||' '|| EMP_LAST Employee, Name as "Department Name"
+  2  from Employee left outer join Department using ( dept_code)
+  3  start with EMP_NUM=101
+  4  connect by prior EMP_NUM=SUPER_ID;
+
+     Level EMPLOYEE                       Department Name
+---------- ------------------------------ -------------------------
+         1 101: Tom Mitchell              Executive
+         2    102: Jamol Abdiev           Advisory
+         3       109: Sarah Miller        Advisory
+         3       113: Cassie Kosyrkov     Advisory
+         2    103: Zhang Han              IT Services
+         3       107: Jaskeet Singh       IT Services
+         3       112: Yash Gupta          IT Services
+         2    104: Sonali Agarwal         Banking
+         3       108: Xu Ziling           Banking
+         3       110: Maitri Vasa         Banking
+         3       111: Karen Clay          Banking
+         2    105: Annie Julian           Administration
+         3       106: Parth  Shah         Administration
+
+13 rows selected.
+ 
+Question 3 
+
+SQL> COLUMN "Proj#" FORMAT A8
+SQL> COLUMN "Project_Name" FORMAT A40
+SQL> COLUMN "Project_Start_Date" FORMAT A20
+SQL> COLUMN "Assign_Year" FORMAT A12
+SQL> COLUMN "Assign_Month" FORMAT A12
+SQL> COLUMN "Month#" FORMAT A8
+SQL> COLUMN "Emp#" FORMAT A8
+SQL> COLUMN "Hours_Spent" FORMAT A12
+SQL>
+SQL> BREAK ON Proj# ON Project_Name ON Project_Start_Date
+SQL>
+SQL> select "Proj#" , "Project_Name" , "Project_Start_Date" , Decode("Assign_Month" , null , 'Total' ,"Assign_Month") as "Assign_Month"  , "Emp#" , "Hours_Spent" from (
+  2     SELECT TO_CHAR(Proj_Number) as "Proj#",
+  3       Name as "Project_Name",
+  4             Start_Date as "Project_Start_Date",
+  5            TO_CHAR(EXTRACT(YEAR FROM Date_Assigned)) as "Assign_Year",
+  6             TO_CHAR(Date_Assigned,'MONTH') as "Assign_Month",
+  7           NVL(TO_CHAR(TRUNC(MONTHS_BETWEEN(Date_Assigned, Start_Date), 0)), 'NA') as "Month#",
+  8             To_CHAR(COUNT(Emp_Num)) as "Emp#",
+  9            To_CHAR(NVL(SUM(Hours_Used), 0)) as "Hours_Spent"
+ 10     FROM Assignment JOIN Project USING (Proj_Number)
+ 11    WHERE Total_Cost IS NULL
+ 12     GROUP BY  Proj_Number, Name, Start_Date,Date_Assigned, EXTRACT(YEAR FROM Date_Assigned), TO_CHAR(Date_Assigned,'MONTH'),
+ 13               NVL(TO_CHAR(TRUNC(MONTHS_BETWEEN(Date_Assigned, Start_Date), 0)), 'NA')
+ 14     UNION
+ 15     SELECT TO_CHAR(Proj_Number) as "Proj#",
+ 16        Name as "Project_Name",
+ 17            NULL as "Project_Start_Date",
+ 18           NULL as "Assign_Year",
+ 19            NULL as "Assign_Month",
+ 20           NULL as "Month#",
+ 21            To_CHAR(COUNT(Emp_Num)) as "Emp#",
+ 22            To_CHAR(NVL(SUM(Hours_Used), 0)) as "Hours_Spent"
+ 23     FROM Assignment JOIN Project USING (Proj_Number)
+ 24     WHERE Total_Cost IS NULL
+ 25     GROUP BY  Proj_Number, Name, Start_Date);
+
+
+
+Proj#    Project_Name                             Project_Start_Date   Assign_Month Emp#     Hours_Spent
+-------- ---------------------------------------- -------------------- ------------ -------- ------------
+10005    Microsoft IT Project 2                   03-JUN-18            JUNE         1        105
+                                                                       NOVEMBER     2        0
+                                                                       Total        3        105
+10009    Salesforce IT Project                    15-AUG-19            AUGUST       2        130
+                                                                       NOVEMBER     1        0
+                                                                       SEPTEMBER    2        90
+                                                                       Total        5        220
+10010    Capital One Banking Project              28-OCT-19            DECEMBER     3        0
+                                                                       NOVEMBER     3        360
+                                                                       OCTOBER      3        45
+                                                                       Total        9        405
+
+11 rows selected.
+ 
+
+Question 4:
+SQL> alter table Employee
+  2  add (BONUS_AMT NUMBER (4) default 0);
+Table altered.
+
+SQL> update Employee
+  2  set BONUS_AMT=(
+  3  select Bonus
+  4  from
+  5  (
+  6  select EMP_NUM, Count(*)*200 Bonus
+  7  from
+  8  (select PROJ_NUMBER, EMP_NUM, START_DATE, Hours
+  9  from(
+ 10  select PROJ_NUMBER, EMP_NUM, START_DATE, NVL(sum(HOURS_USED),0) Hours
+ 11  from assignment natural join project
+ 12  where START_DATE <='31-DEC-18' and START_DATE >='1-JAN-18'
+ 13  group by PROJ_NUMBER, EMP_NUM, START_DATE
+ 14  )
+ 15  where Hours>40)
+ 16  group by EMP_NUM
+ 17  ) b
+ 18  where b.EMP_NUM=Employee.EMP_NUM)
+ 19  where exists(select Bonus
+ 20  from
+ 21  (
+ 22  select EMP_NUM, Count(*)*200 Bonus
+ 23  from
+ 24  (select PROJ_NUMBER, EMP_NUM, START_DATE, Hours
+ 25  from(
+ 26  select PROJ_NUMBER, EMP_NUM, START_DATE, NVL(sum(HOURS_USED),0) Hours
+ 27  from assignment natural join project
+ 28  where START_DATE <='31-DEC-18' and START_DATE >='1-JAN-18'
+ 29  group by PROJ_NUMBER, EMP_NUM, START_DATE
+ 30  )
+ 31  where Hours>40)
+ 32  group by EMP_NUM
+ 33  ) b
+ 34  where b.EMP_NUM=Employee.EMP_NUM);
+7 rows updated.
+
+SQL> select * from Employee;
+
+
+   EMP_NUM EMP_LAST                  EMP_FIRST                 DOB       HIRE_DATE   SUPER_ID  DEPT_CODE  BONUS_AMT
+---------- ------------------------- ------------------------- --------- --------- ---------- ---------- ----------
+       101 Mitchell                  Tom                       09-AUG-71 05-JUN-13                  1004          0
+       102 Abdiev                    Jamol                     16-DEC-88 07-NOV-14        101       1001        200
+       103 Han                       Zhang                     16-MAR-85 02-MAR-15        101       1002        400
+       104 Agarwal                   Sonali                    16-JUL-90 07-APR-16        101       1003          0
+       105 Julian                    Annie                     03-MAR-72 12-MAY-16        101       1000          0
+       106 Shah                      Parth                     26-MAY-92 07-SEP-16        105       1000          0
+       107 Singh                     Jaskeet                   05-JUN-96 08-SEP-17        103       1002          0
+       108 Ziling                    Xu                        10-NOV-96 01-DEC-17        104       1003        200
+       109 Miller                    Sarah                     30-DEC-93 06-JUN-18        102       1001        200
+       110 Vasa                      Maitri                    05-JAN-94 05-SEP-18        104       1003          0
+       111 Clay                      Karen                     03-JUL-92 02-NOV-18        104       1003          0
+       112 Gupta                     Yash                      03-APR-95 15-OCT-19        103       1002          0
+       113 Kosyrkov                  Cassie                    02-OCT-94 12-NOV-19        102       1001          0
+
+13 rows selected. 
+Question 5: 
+
+SQL> COLUMN "No of Days Between"  format A16
+SQL> COLUMN "No of Projects"  format A14
+SQL>
+SQL>
+SQL> SELECT  EMPLOYEE as "Employee" , Hire_Date as "Hire Date" , "Training Name" , Date_Acquired As "Date Acquired" , "No of Days Between" , "No of Projects"
+  2   FROM (SELECT Emp_Num || ': ' || Emp_Last || ' ' || Emp_First AS EMPLOYEE
+  3          FROM Employee
+  4        WHERE EXTRACT(YEAR FROM Hire_Date) = EXTRACT(YEAR FROM SYSDATE) - 1)
+  5      LEFT JOIN (
+  6      SELECT Emp_Num || ': ' || Emp_Last || ' ' || Emp_First AS EMPLOYEE,
+  7        Hire_Date,
+  8        Training.Name as "Training Name",
+  9         Date_Acquired,
+ 10           TO_CHAR(Date_Acquired - Hire_Date) AS "No of Days Between",
+ 11           TO_CHAR(COUNT(distinct Proj_Number)) as "No of Projects"
+ 12     FROM Employee LEFT OUTER JOIN Training USING (Emp_Num)
+ 13       LEFT OUTER JOIN Assignment USING (Emp_Num)
+ 14       LEFT OUTER JOIN Project USING (Proj_Number)
+ 15     WHERE EXTRACT(YEAR FROM Hire_Date) = EXTRACT(YEAR FROM SYSDATE) - 1
+ 16     GROUP BY Emp_Num, Emp_Last, Emp_First, Hire_Date, Training.Name, Date_Acquired
+ 17     ) USING (EMPLOYEE);
+
+Employee                       Hire Date Training Name                                 Date Acqu No of Days Betwe No of Projects
+------------------------------ --------- --------------------------------------------- --------- ---------------- --------------
+109: Miller Sarah              06-JUN-18 Tableau Training                              05-JUL-18 29               1
+110: Vasa Maitri               05-SEP-18 Tableau Training                              07-OCT-18 32               2
+111: Clay Karen                02-NOV-18 Big Data Training                             11-NOV-19 374              0
+
+
+
+
+
+
+
+
+
+
+
+
+Question 6: 
+
+
+/*Note Discontinuity is shown in terms of Months where nobody was assigned to the Project/
+
+SQL> select PROJECT_NUMBER "Project Number", Name "Project Name", Status
+  2  from
+  3  (select PROJECT_NUMBER, Name, Case
+  4  when (Extract(month from max_dateassign) <> Extract(month from maxdate_ended)) then 'Ongoing'
+  5  when (Extract(month from max_dateassign) = Extract(month from maxdate_ended)) then 'Completed'
+  6  end Status
+  7  from(
+  8  select * from (
+  9  select PROJ_NUMBER PROJECT_NUMBER, Name, diff_between_max_min_month_assigned,
+ 10  distinct_count_month_assigned, diff_between_max_min_month_assigned - distinct_count_month_assigned diff,
+ 11   maxdate_ended, max_dateassign
+ 12  from
+ 13  (select PROJ_NUMBER, Name, max(DATE_ASSIGNED), min(DATE_ASSIGNED),
+ 14  ROUND(MONTHS_BETWEEN(LAST_DAY(max(DATE_ASSIGNED)),
+ 15  trunc(min(DATE_ASSIGNED), 'MONTH'))) diff_between_max_min_month_assigned,
+ 16  max(DATE_ASSIGNED) max_dateassign, max(DATE_ENDED) maxdate_ended
+ 17  from assignment natural join project
+ 18  group by PROJ_NUMBER, Name
+ 19  order by PROJ_NUMBER)
+ 20  natural join
+ 21  (select PROJ_NUMBER,
+ 22  count( distinct Extract(Month from DATE_ASSIGNED) ||': '|| Extract(Year from DATE_ASSIGNED)) distinct_count_month_assigned
+ 23  from assignment natural join project
+ 24  group by PROJ_NUMBER
+ 25  order by PROJ_NUMBER))
+ 26  where diff > 0 ));
+
+Project Number Project Name                                       STATUS
+-------------- -------------------------------------------------- ---------
+         10005 Microsoft IT Project 2                             Ongoing
+         10006 Cerner Advisory Project                            Completed
+         10009 Salesforce IT Project                              Ongoing
+
+
+
+
+
+Question 7 :
+/* The query shows projects that started in the Quarter. However, if a project started in a Quarter and continued in the next Quarter , it shows the Number of employees and Average Hours worked on the project in that Quarter too */
+
+SQL> COLUMN "Quarter" FORMAT A10
+SQL> COLUMN "No. of Projects" FORMAT 999999
+SQL> COLUMN "No. of Employees" FORMAT 999999
+SQL> COLUMN "Avg Hours per Project" FORMAT 999999
+SQL>
+SQL> select E.Quarter as "Quarter", DECODE(No_Projects,null , 0 , No_Projects) as "No. of Projects",
+  2  DECODE(No_Employees,null , 0 ,No_Employees) as "No. of Employees",NVL(Avg_Hours,0) as "Avg Hours per Project"
+  3  FROM (select rownum as Quarter
+  4  FROM DUAL
+  5      CONNECT by rownum<=4) D
+  6  LEFT OUTER JOIN
+  7   (select TO_CHAR(Date_Assigned,'Q') as Quarter,
+  8          COUNT(DISTINCT Emp_Num) as No_Employees,
+  9  SUM(Hours_Used)/COUNT(DISTINCT proj_number) as Avg_Hours
+ 10  FROM ASSIGNMENT
+ 11  WHERE Extract(year from Date_Assigned)=Extract(year from sysdate)
+ 12  GROUP BY TO_CHAR(Date_Assigned,'Q')) E
+ 13  ON E.Quarter = D.Quarter
+ 14  LEFT OUTER JOIN
+ 15  (SELECT TO_CHAR(start_date, 'Q') as Quarter, COUNT(DISTINCT proj_number) No_Projects
+ 16  FROM project
+ 17  WHERE EXTRACT(YEAR FROM start_date) = EXTRACT(YEAR FROM sysdate)
+ 18  GROUP BY TO_CHAR(start_date, 'Q'))P
+ 19  ON P.Quarter=E.Quarter
+ 20  ORDER BY 1;
+
+Quarter    No. of Projects No. of Employees Avg Hours per Project
+---------- --------------- ---------------- ---------------------
+1                        1                3                   235
+2                        0                1                   180
+3                        1                2                   220
+4                        1                5                   135
+
+
+
+
+
+
+Question 8. 
+SQL> COLUMN Employee format A20
+SQL> column ID format 999
+SQL>
+SQL> set linesize 200
+SQL> COLUMN "emp_num1" format 999
+SQL> COLUMN da1 format A12
+SQL> COLUMN da2 format A12
+SQL> COLUMN da3 format A12
+SQL> COLUMN da4 format A12
+SQL> COLUMN da5 format A12
+SQL> COLUMN da6 format A12
+SQL> COLUMN da7 format A12
+SQL> COLUMN sk1 format 99
+SQL> COLUMN sk2 format 99
+SQL> COLUMN sk3 format 99
+SQL> COLUMN sk4 format 99
+SQL> COLUMN sk5 format 99
+SQL> COLUMN sk6 format 99
+SQL> COLUMN sk7 format 99
+SQL>
+SQL>
+SQL> column da1 heading 'Latest|Date|Acquired'
+SQL> column da2 heading 'Latest|Date|Acquired'
+SQL> column da3 heading 'Latest|Date|Acquired'
+SQL> column da4 heading 'Latest|Date|Acquired'
+SQL> column da5 heading 'Latest|Date|Acquired'
+SQL> column da6 heading 'Latest|Date|Acquired'
+SQL> column da7 heading 'Latest|Date|Acquired'
+SQL>
+SQL> column sk1 heading 'Negotiation'
+SQL> column sk2 heading 'Data|Analysis'
+SQL> column sk3 heading 'Biz|Intel.'
+SQL> column sk4 heading 'Proj.|Mgmt.'
+SQL> column sk5 heading 'Tableau'
+SQL> column sk6 heading 'Big|Data'
+SQL> column sk7 heading 'Deep|Learning'
+SQL>
+SQL> column Total format 9
+SQL>
+SQL>
+SQL> select emp_num1 ID, Employee, Negotiation sk1,  MAX(DATEACQUIRED) da1, DataAnalysis sk2, MAX(DATEACQUIRED1) da2, BusinessIntelligence sk3, max(DATEACQUIRED2) da3,
+  2   ProjectManagement sk4, max(DATEACQUIRED3) da4, Tableau sk5, max(DATEACQUIRED4) da5, BigData sk6, max(DATEACQUIRED5) da6, DeepLearning sk7, max(DATEACQUIRED6) da7,
+  3    (Negotiation + DataAnalysis + ProjectManagement + BigData + DeepLearning + Tableau + BusinessIntelligence) Total  from
+  4  (select F.EMP_NUM emp_num1, Employee, "Negotiation" Negotiation, case when (S.DESCRIPTION = 'Negotiation') then to_char(S.maxdate) else '-------' end DATEACQUIRED,
+  5  "Data Analysis" DataAnalysis, case when (S.DESCRIPTION = 'Data Analysis') then to_char(S.maxdate) else '-------' end DATEACQUIRED1,
+  6  "Business Intelligence" BusinessIntelligence, case when (S.DESCRIPTION = 'Business Intelligence') then to_char(S.maxdate) else '-------' end DATEACQUIRED2,
+  7  "Project Management" ProjectManagement, case when (S.DESCRIPTION = 'Project Management') then to_char(S.maxdate) else '-------' end DATEACQUIRED3,
+  8  "Tableau" Tableau, case when (S.DESCRIPTION = 'Tableau') then to_char(S.maxdate) else '-------' end DATEACQUIRED4,
+  9  "Big Data" BigData, case when (S.DESCRIPTION = 'Big Data ') then to_char(S.maxdate) else '-------' end DATEACQUIRED5,
+ 10  "Deep Learning" DeepLearning, case when (S.DESCRIPTION = 'Deep Learning') then to_char(S.maxdate) else '-------' end DATEACQUIRED6
+ 11   from
+ 12  (select
+ 13  EMP_NUM ,
+ 14  Decode(EMP_FIRST , Null, 'Number of Trainings', EMP_FIRST || ' ' || EMP_LAST) Employee,
+ 15  sum(Decode(DESCRIPTION, 'Negotiation', 1,0)) "Negotiation",
+ 16  sum(Decode(DESCRIPTION, 'Data Analysis', 1,0)) "Data Analysis",
+ 17  sum(Decode(DESCRIPTION, 'Business Intelligence', 1,0)) "Business Intelligence",
+ 18  sum(Decode(DESCRIPTION, 'Project Management', 1,0)) "Project Management",
+ 19  sum(Decode(DESCRIPTION, 'Tableau', 1,0)) "Tableau",
+ 20  sum(Decode(DESCRIPTION, 'Big Data ', 1,0)) "Big Data",
+ 21  sum(Decode(DESCRIPTION, 'Deep Learning', 1,0)) "Deep Learning",
+ 22  count(code) "Total"
+ 23  from Employee natural join Training natural join skill
+ 24  group by grouping sets((EMP_Num,  EMP_fIRST, EMP_FIRST || ' ' || EMP_LAST), ())) F
+ 25  left outer join (select EMP_NUM, DESCRIPTION, max(DATE_ACQUIRED) maxdate
+ 26  from skill natural join Training
+ 27  group by EMP_NUM, DESCRIPTION
+ 28  order by EMP_NUM) S ON F.EMP_NUM = S.EMP_NUM)
+ 29  group by emp_num1, Employee, Negotiation, DataAnalysis, BusinessIntelligence, ProjectManagement, Tableau, BigData, DeepLearning
+ 30  order by emp_num1
+ 31  ;
+
+                                      Latest                Latest              Latest             Latest               Latest            Latest                Latest
+                                      Date             Data Date            Biz Date         Proj. Date                 Date          Big Date             Deep Date
+  ID EMPLOYEE             Negotiation Acquired     Analysis Acquired     Intel. Acquired     Mgmt. Acquired     Tableau Acquired     Data Acquired     Learning Acquired     TOTAL
+---- -------------------- ----------- ------------ -------- ------------ ------ ------------ ----- ------------ ------- ------------ ---- ------------ -------- ------------ -----
+ 102 Jamol Abdiev                   1 01-DEC-18           2 05-JUN-19         0 -------          0 -------            0 -------         0 -------             0 -------          3
+ 103 Zhang Han                      1 02-DEC-18           0 -------           0 -------          0 -------            0 -------         2 25-JUN-19           0 -------          3
+ 104 Sonali Agarwal                 0 -------             1 03-DEC-18         0 -------          0 -------            2 18-JUL-19       0 -------             0 -------          3
+ 107 Jaskeet Singh                  0 -------             0 -------           0 -------          0 -------            0 -------         0 -------             1 15-NOV-17        1
+ 108 Xu Ziling                      0 -------             0 -------           1 15-FEB-18        0 -------            0 -------         0 -------             0 -------          1
+ 109 Sarah Miller                   0 -------             0 -------           0 -------          0 -------            1 05-JUL-18       0 -------             0 -------          1
+ 110 Maitri Vasa                    0 -------             0 -------           0 -------          0 -------            1 07-OCT-18       0 -------             0 -------          1
+ 111 Karen Clay                     0 -------             0 -------           0 -------          0 -------            0 -------         1 11-NOV-19           0 -------          1
+ 112 Yash Gupta                     0 -------             1 25-NOV-19         0 -------          0 -------            0 -------         1 11-NOV-19           0 -------          2
+ 113 Cassie Kosyrkov                0 -------             1 25-NOV-19         0 -------          0 -------            0 -------         0 -------             0 -------          1
+     Number of Trainings            2 -------             5 -------           1 -------          0 -------            4 -------         4 -------             1 -------         ##
+11 rows selected.
+
+
+Question 9: 
+
+SQL> COLUMN Dept FORMAT A25
+SQL> COLUMN Skill FORMAT A35
+SQL> COLUMN Training_Num_Of_Times FORMAT A20
+SQL> COLUMN Rank FORMAT A20
+SQL> BREAK ON "Department" ON "Skill"
+SQL>
+SQL> SELECT Dept as "Department" , Skill as "Skill", NVL(Training_Num_Of_Times, 'NA') as "Training_Num_Of_Times", NVL(Rank, 'NA') as "Rank"
+  2  FROM （SELECT DISTINCT TO_CHAR(Dept_Code) || ':' || Department.Name as Dept, TO_CHAR(Code) || ':' || Description as Skill
+  3  FROM Skill, Department
+  4  ORDER BY Dept)
+  5  LEFT JOIN
+  6  (
+  7  SELECT TO_CHAR(Dept_Code) || ':' || Department.Name as Dept,
+  8     TO_CHAR(Code) || ':' || Description as Skill,
+  9     TO_CHAR(COUNT(Train_Num)) as Training_Num_Of_Times,
+ 10     TO_CHAR(RANK() OVER (PARTITION BY Department.Name ORDER BY COUNT(Train_Num) DESC)) as Rank
+ 11  FROM Skill JOIN Training USING(Code)
+ 12     JOIN Employee USING(Emp_Num)
+ 13     JOIN Department USING (Dept_Code)
+ 14  GROUP BY Dept_Code, Department.Name, Code, Description
+ 15  ORDER BY Dept, Rank
+ 16  ) USING (Dept, Skill)
+ 17  ORDER BY Dept, Rank, Skill;
+
+
+
+
+
+
+
+
+
+
+
+
+Department           Skill                               Training_Num_Of_Time Rank
+-------------------- ----------------------------------- -------------------- --------------------
+1000:Administration  1:Negotiation                       NA                   NA
+                     2:Data Analysis                     NA                   NA
+                     3:Business Intelligence             NA                   NA
+                     4:Project Management                NA                   NA
+                     5:Tableau                           NA                   NA
+                     6:Big Data                          NA                   NA
+                     7:Deep Learning                     NA                   NA
+1001:Advisory        2:Data Analysis                     3                    1
+                     1:Negotiation                       1                    2
+                     5:Tableau                           1                    2
+                     3:Business Intelligence             NA                   NA
+                     4:Project Management                NA                   NA
+                     6:Big Data                          NA                   NA
+                     7:Deep Learning                     NA                   NA
+1002:IT Services     6:Big Data                          3                    1
+                     1:Negotiation                       1                    2
+                     2:Data Analysis                     1                    2
+                     7:Deep Learning                     1                    2
+                     3:Business Intelligence             NA                   NA
+                     4:Project Management                NA                   NA
+                     5:Tableau                           NA                   NA
+1003:Banking         5:Tableau                           3                    1
+                     2:Data Analysis                     1                    2
+                     3:Business Intelligence             1                    2
+                     6:Big Data                          1                    2
+                     1:Negotiation                       NA                   NA
+                     4:Project Management                NA                   NA
+                     7:Deep Learning                     NA                   NA
+1004:Executive       1:Negotiation                       NA                   NA
+                     2:Data Analysis                     NA                   NA
+                     3:Business Intelligence             NA                   NA
+                     4:Project Management                NA                   NA
+                     5:Tableau                           NA                   NA
+                     6:Big Data                          NA                   NA
+                     7:Deep Learning                     NA                   NA
+
+35 rows selected.
+
+
+
+Question 10: 
+
+SQL> COLUMN Supervisor FORMAT a20
+SQL> COLUMN Employee FORMAT a20
+SQL> COLUMN TRAIN_NUM format 99
+SQL> COLUMN "Date Acquired" FORMAT a13
+SQL> COLUMN Training FORMAT a30
+SQL> column code format 99
+SQL> COLUMN "Skill Type" format a21
+SQL> COLUMN "Training Count" FORMAT 99
+SQL> COLUMN "Months Passed" format 99
+SQL>
+SQL> Break on Employee on Supervisor on "Training Count" skip 1
+SQL>
+SQL> select Employee, Supervisor, Count "Training Count", Training, DATE_ACQUIRED as "Date Acquired", DESCRIPTION as "Skill Type", Months as "Months Passed"
+  2  from
+  3  (
+  4  select EMP_NUM, Employee, Supervisor, Code,Training, DATE_ACQUIRED, DESCRIPTION, TRAIN_NUM, Floor(MONTHS_BETWEEN(sysdate,DATE_ACQUIRED)) as months
+  5  from skill natural join (
+  6  select distinct EMP_NUM, Employee, Supervisor, TRAIN_NUM, Code, Name Training, DATE_ACQUIRED
+  7  from Training natural join (select e.EMP_NUM EMP_NUM, e.EMP_NUM ||': '|| e.EMP_FIRST||' '|| e.EMP_LAST Employee, s.EMP_NUM ||': '|| s.EMP_FIRST||' '|| s.EMP_LAST Supervisor
+  8  from Employee e left outer join Employee s on e.SUPER_ID=s.EMP_NUM))
+  9  )
+ 10  natural join
+ 11  (select EMP_NUM, count(Code) Count
+ 12  from Training
+ 13  group by EMP_NUM)
+ 14  order by Employee, DATE_ACQUIRED;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+EMPLOYEE             SUPERVISOR           Training Count TRAINING                       Date Acquired Skill Type            Months Passed
+-------------------- -------------------- -------------- ------------------------------ ------------- --------------------- -------------
+102: Jamol Abdiev    101: Tom Mitchell                 3 Data Analysis Course           01-JAN-15     Data Analysis                    59
+                                                         Negotiation Course             01-DEC-18     Negotiation                      12
+                                                         Data Analysis Training         05-JUN-19     Data Analysis                     5
+
+103: Zhang Han       101: Tom Mitchell                 3 Big Data Technical Training    05-MAY-15     Big Data                         54
+                                                         Negotiation Workshop           02-DEC-18     Negotiation                      12
+                                                         Big Data Training              25-JUN-19     Big Data                          5
+
+104: Sonali Agarwal  101: Tom Mitchell                 3 Tableau Workshop               02-JUL-16     Tableau                          41
+                                                         Data Analysis Course           03-DEC-18     Data Analysis                    12
+                                                         Tableau Workshop               18-JUL-19     Tableau                           4
+
+107: Jaskeet Singh   103: Zhang Han                    1 Deep Learning Workshop         15-NOV-17     Deep Learning                    24
+
+108: Xu Ziling       104: Sonali Agarwal               1 Business Intelligence Course   15-FEB-18     Business Intelligence            21
+
+109: Sarah Miller    102: Jamol Abdiev                 1 Tableau Training               05-JUL-18     Tableau                          16
+
+110: Maitri Vasa     104: Sonali Agarwal               1 Tableau Training               07-OCT-18     Tableau                          13
+
+111: Karen Clay      104: Sonali Agarwal               1 Big Data Training              11-NOV-19     Big Data                          0
+
+112: Yash Gupta      103: Zhang Han                    2 Big Data Training              11-NOV-19     Big Data                          0
+                                                         Data Analysis Course           25-NOV-19     Data Analysis                     0
+
+113: Cassie Kosyrkov 102: Jamol Abdiev                 1 Data Analysis Course           25-NOV-19     Data Analysis                     0
+
+
+17 rows selected.
+
+ 
+Question 11: 
+
+SQL> COLUMN Rank FORMAT A10
+SQL> COLUMN "Employee" FORMAT A30
+SQL> COLUMN "Utilization Rate" FORMAT A20
+SQL> COLUMN Bonus FORMAT A10
+SQL> SELECT TO_CHAR(Rank) as "Rank",
+  2         EMPLOYEE "Employee",
+  3         TO_CHAR(Utilization_Rate, '999.9999') as "Utilization Rate",
+  4         TO_CHAR((11000 - Rank * 1000) , '$999,999') as "Bonus"
+  5  FROM
+  6  (SELECT RANK() OVER (ORDER BY Utilization_Rate DESC) as Rank,
+  7     Emp_Num || ': ' || Emp_Last || ' ' || Emp_First as EMPLOYEE,
+  8     Utilization_Rate
+  9  FROM (
+ 10  SELECT Emp_Num,
+ 11     SUM(Hours_Used) Utilized_Hour,
+ 12     (SYSDATE - Hire_Date) / 7 * 40 Available_Hour,
+ 13     SUM(Hours_Used) /((SYSDATE - Hire_Date) / 7 * 40) Utilization_Rate
+ 14  FROM Employee JOIN Assignment USING (Emp_Num)
+ 15  GROUP BY Emp_Num, (SYSDATE - Hire_Date) / 7 * 40
+ 16  ) JOIN Employee USING (Emp_Num))
+ 17  WHERE Rank < 6
+ 18  ORDER BY Rank;
+
+Rank       Employee                       Utilization Rate     Bonus
+---------- ------------------------------ -------------------- ----------
+1          110: Vasa Maitri                   .2061              $10,000
+2          104: Agarwal Sonali                .1035               $9,000
+3          107: Singh Jaskeet                 .0997               $8,000
+4          103: Han Zhang                     .0922               $7,000
+5          108: Ziling Xu                     .0824               $6,000
+ 
+Question 12:
+
+SQL> COLUMN tables format A10
+SQL> COLUMN columns format A15
+SQL> COLUMN constraints format A30
+SQL> COLUMN search_condition format A80
+SQL> break on tables skip 1
+
+SQL> select tables, columns, constraints, constraint_types, search_condition
+  2  from
+  3  (select tables, columns, constraints, Case constraint_type
+  4  when 'P' then 'PK'
+  5  when 'R' then 'FK'
+  6  when 'C' then 'CK'
+  7  end constraint_types, search_condition
+  8  from(
+  9  (select distinct a.table_name tables, a.COLUMN_name columns, b.constraint_name constraints
+ 10  from
+ 11  (select table_name, COLUMN_name
+ 12  from user_tab_columns) a left outer join ALL_CONS_COLUMNS b on a.table_name=b.table_name and a.COLUMN_name=b.COLUMN_name) c
+ 13  left outer join user_constraints d
+ 14  on c.constraints=d.constraint_name)
+ 15  ) e left outer join user_tab_columns f on e.tables=f.table_name and e.columns=f.COLUMN_name
+ 16  order by tables, column_ID;
+ 
+TABLES     COLUMNS         CONSTRAINTS                    CO SEARCH_CONDITION
+---------- --------------- ------------------------------ -- --------------------------------------------------------------------------------
+ASSIGNMENT ASSIGN_NUM      ASSIGNMENT_ASSIGN_NUM_PK       PK
+           PROJ_NUMBER     ASSIGNMENT_PROJ_NUMBER_FK      FK
+           EMP_NUM         ASSIGNMENT_EMP_NUM_FK          FK
+           DATE_ASSIGNED   ASSIGNMENT_DATE_ENDED_CK       CK Date_Ended > Date_Assigned
+           DATE_ENDED      ASSIGNMENT_DATE_ENDED_CK       CK Date_Ended > Date_Assigned
+           HOURS_USED
+
+CLIENT     CLIENT_ID       CLIENT_CLIENT_ID_PK            PK
+           NAME
+           STREET
+           CITY
+           STATE
+           ZIP_CODE
+           INDUSTRY
+           WEB_ADDRESS
+           PHONE           CLIENT_PHONE_CK                CK REGEXP_LIKE (phone,'^([0-9]{3}-[0-9]{3}-[0-9]{4}|[0-9]{10})$')
+           CONTACT_NAME
+
+DEPARTMENT DEPT_CODE       DEPARTMENT_DEPT_CODE_PK        PK
+           NAME            DEPARTMENT_NAME_CK             CK Name in ('Administration', 'Advisory', 'IT Services', 'Banking', 'Executive')
+           LOCATION
+           PHONE           DEPARTMENT_PHONE_CK            CK REGEXP_LIKE (phone,'^([0-9]{3}-[0-9]{3}-[0-9]{4}|[0-9]{10})$')
+           MANAGER_ID      DEPARTMENT_MANAGER_ID_FK       FK
+
+EMPLOYEE   EMP_NUM         EMPLOYEE_EMP_NUM_PK            PK
+           EMP_LAST
+           EMP_FIRST
+           DOB             EMPLOYEE_HIRE_DATE_CK          CK Hire_Date > DOB
+           HIRE_DATE       EMPLOYEE_HIRE_DATE_CK          CK Hire_Date > DOB
+           SUPER_ID        EMPLOYEE_SUPER_ID_FK           FK
+           DEPT_CODE       EMPLOYEE_DEPTCODE_FK           FK
+           BONUS_AMT
+
+PROJECT    PROJ_NUMBER     PROJECT_PROJ_NUMBER_PK         PK
+           NAME
+           START_DATE
+           TOTAL_COST
+           DEPT_CODE       PROJECT_DEPT_CODE_FK           FK
+           CLIENT_ID       PROJECT_CLIENT_ID_FK           FK
+
+SKILL      CODE            SKILL_CODE_PK                  PK
+           DESCRIPTION
+
+TRAINING   TRAIN_NUM       TRAINING_TRAIN_NUM_PK          PK
+           CODE            TRAINING_CODE_FK               FK
+           EMP_NUM         TRAINING_EMP_NUM_FK            FK
+           DATE_ACQUIRED
+           NAME
+           COMMENTS
+43 rows selected. 
