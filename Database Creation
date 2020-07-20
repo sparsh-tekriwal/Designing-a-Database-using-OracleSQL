@@ -1,0 +1,219 @@
+Script 1:
+DROP TABLE Skill CASCADE CONSTRAINTS;
+DROP TABLE Training CASCADE CONSTRAINTS;
+DROP TABLE Department CASCADE CONSTRAINTS;
+DROP TABLE Employee CASCADE CONSTRAINTS;
+DROP TABLE Client CASCADE CONSTRAINTS;
+DROP TABLE Project CASCADE CONSTRAINTS;
+DROP TABLE Assignment CASCADE CONSTRAINTS;
+
+
+CREATE TABLE Skill
+(Code    		Number(3),
+ Description    Varchar2(25),
+ CONSTRAINT 	Skill_Code_PK PRIMARY KEY (Code));
+
+ CREATE TABLE Client
+(Client_ID	 	 Number(3),
+ Name     		 Varchar2(25),
+ Street 		 Varchar2(40),
+ City			 Varchar2(25),
+ State           Char(2),
+ Zip_Code		 Char(5),
+ Industry		 Varchar2(15),
+ Web_Address	 Varchar2(60),
+ Phone			 Char(12) CONSTRAINT Client_phone_ck CHECK (REGEXP_LIKE (phone,'^([0-9]{3}-[0-9]{3}-[0-9]{4}|[0-9]{10})$')),
+ Contact_Name	 Varchar2(50),
+ CONSTRAINT 	 Client_Client_ID_PK PRIMARY KEY (Client_ID));
+
+
+CREATE TABLE Employee
+(Emp_Num    	Number(3),
+ Emp_Last       Varchar2(25),
+ Emp_First     	Varchar2(25),
+ DOB       		Date,
+ Hire_Date 		Date DEFAULT SYSDATE,
+ Super_ID 		Number(3),
+ Dept_Code 		Number(4),
+ CONSTRAINT 	Employee_Hire_Date_ck CHECK (Hire_Date > DOB),
+ CONSTRAINT 	Employee_Emp_Num_PK PRIMARY KEY (Emp_Num),
+ CONSTRAINT 	Employee_Super_ID_FK FOREIGN KEY (Super_ID) REFERENCES Employee (Emp_Num));
+
+
+CREATE TABLE Department
+(Dept_Code       Number(4),
+ Name            Varchar2(25) CONSTRAINT Department_Name_ck CHECK (Name in ('Administration', 'Advisory', 'IT Services', 'Banking', 'Executive')),
+ Location        Varchar2(30),
+ Phone           Char(12)  CONSTRAINT Department_phone_ck CHECK (REGEXP_LIKE (phone,'^([0-9]{3}-[0-9]{3}-[0-9]{4}|[0-9]{10})$')),
+ Manager_ID		 Number(3),
+ CONSTRAINT 	 Department_Dept_Code_PK  PRIMARY KEY (Dept_Code),
+ CONSTRAINT 	 Department_Manager_ID_FK  FOREIGN KEY (Manager_ID) REFERENCES Employee (Emp_Num));
+
+
+CREATE TABLE Project
+(Proj_Number 	 Number(5),
+ Name 			 Varchar2(50),
+ Start_Date		 Date DEFAULT SYSDATE,
+ Total_Cost		 Number(9, 2),
+ Dept_Code    	 Number(4),
+ Client_ID 		 Number(3),
+ CONSTRAINT 	 Project_Proj_Number_PK PRIMARY KEY (Proj_Number),
+ CONSTRAINT 	 Project_Dept_Code_FK FOREIGN KEY (Dept_Code) 	REFERENCES Department (Dept_Code),
+ CONSTRAINT 	 Project_Client_ID_FK FOREIGN KEY (Client_ID) 	REFERENCES Client (Client_ID));
+
+CREATE TABLE Assignment
+(Assign_Num  	Number(4),
+ Proj_Number 	Number(5),
+ Emp_Num 		Number(3),
+ Date_Assigned 	Date DEFAULT SYSDATE,
+ Date_Ended 	Date,
+ Hours_Used 	Number(5),
+ CONSTRAINT  	Assignment_date_ended_ck CHECK (Date_Ended > Date_Assigned),
+ CONSTRAINT 	Assignment_Assign_Num_PK  	PRIMARY KEY (Assign_Num),
+ CONSTRAINT 	Assignment_Proj_Number_FK 	FOREIGN KEY (Proj_Number) 	REFERENCES Project (Proj_Number),
+ CONSTRAINT 	Assignment_Emp_Num_FK 		FOREIGN KEY (Emp_Num) 		REFERENCES Employee (Emp_Num));
+
+CREATE TABLE Training
+(Train_Num      Number(4),
+ Code           Number(3),
+ Emp_Num  	 	Number(3),
+ Date_Acquired  Date DEFAULT SYSDATE,
+ Name     		Varchar2(45),
+ Comments 		Varchar2(30),
+ CONSTRAINT 	Training_Train_Num_PK 		PRIMARY KEY (Train_Num),
+ CONSTRAINT 	Training_Code_FK 			FOREIGN KEY (Code) 			REFERENCES Skill (Code),
+ CONSTRAINT 	Training_Emp_Num_FK 		FOREIGN KEY (Emp_Num) 		REFERENCES Employee (Emp_Num));
+
+ALTER TABLE Employee 
+  ADD CONSTRAINT  Employee_DeptCode_FK 
+      FOREIGN KEY (Dept_Code) REFERENCES Department (Dept_Code); 
+Script 2:
+
+INSERT INTO Skill VALUES(1 , 'Negotiation');
+INSERT INTO Skill VALUES(2 , 'Data Analysis');
+INSERT INTO Skill VALUES(3 , 'Business Intelligence');
+INSERT INTO Skill VALUES(4 , 'Project Management');
+INSERT INTO Skill VALUES(5 , 'Tableau');
+INSERT INTO Skill VALUES(6 , 'Big Data ');
+INSERT INTO Skill VALUES(7 , 'Deep Learning');
+
+INSERT INTO Client VALUES(10 , 'Apple' , '1 Apple Park Way' , 'Cupertino' , 'CA' , '95014' , 'Technology' , 'www.apple.com' , '408-996-1010' , 'Steve Jobs' );
+INSERT INTO Client VALUES(20 , 'PNC Bank' , '300 Fifth Avenue' , 'Pittsburgh' , 'PA' , '15222' , 'Banking' , 'www.pnc.com' , '412-762-2000' , 'William S. Demchak' );
+INSERT INTO Client VALUES(30 , 'Giant Eagle' , '6352 Forward Avenue' , 'Pittsburgh' , 'PA' , '15217' , 'Retail' , 'www.gianteagle.com' , '800-553-2324' , 'Laura Karet' );
+INSERT INTO Client VALUES(40 , 'Microsoft' , '1 Microsoft Way' , 'Redmond' , 'WA' , '98052' , 'Technology' , 'www.microsoft.com' , '425-882-8080' , 'Steven Ballmer' );
+INSERT INTO Client VALUES(50 , 'Cerner' , '2800 Rockcreek Pkwy' , 'Kansas City' , 'MO' , '64117' , 'Healthcare' , 'www.cerner.com' , '432-399-9047' , 'Neal Patterson' );
+INSERT INTO Client VALUES(60 , 'Palantir' , '100 Hamilton Ave' , 'Palo Alto' , 'CA' , '94301' , 'Technology' , 'www.palantir.com' , '268-831-0502' , 'Peter Thiel' );
+INSERT INTO Client VALUES(70 , 'Salesforce' , '415 Mission St' , 'San Francisco' , 'CA' , '94105' , 'Technology' , 'www.salesforce.com' , '894-601-7619' , 'Keith Block' );
+INSERT INTO Client VALUES(80 , 'Capital One' , '1680 Capital One Drive' , 'McLean' , 'VA' , '22102' , 'Banking' , 'www.capitalone.com' , '871-821-0465' , 'Richard Fairbank' );
+INSERT INTO Client VALUES(90 , 'Walmart' , '702 SouthWest Street' , 'Bentonville' , 'AK' , '72716' , 'Retail' , 'www.walmart.com' , '581-595-2420' , 'Doug McMillon' );
+
+INSERT INTO Employee VALUES(101 , 'Mitchell' , 'Tom' , '09-Aug-1971' , '05-Jun-2013' , NULL , NULL);
+INSERT INTO Employee VALUES(102 , 'Abdiev' , 'Jamol' , '16-Dec-1988' , '07-Nov-2014' , 101 , NULL);
+INSERT INTO Employee VALUES(103 , 'Han' , 'Zhang' , '16-Mar-1985' , '02-Mar-2015' , 101 , NULL);
+INSERT INTO Employee VALUES(104 , 'Agarwal' , 'Sonali' , '16-Jul-1990' , '07-Apr-2016' , 101 , NULL);
+INSERT INTO Employee VALUES(105 , 'Julian' , 'Annie' , '03-Mar-1972' , '12-May-2016' , 101 , NULL);
+INSERT INTO Employee VALUES(106 , 'Shah' , 'Parth ' , '26-May-1992' , '07-Sep-2016' , 105 , NULL);
+INSERT INTO Employee VALUES(107 , 'Singh' , 'Jaskeet' , '05-Jun-1996' , '08-Sep-2017' , 103 , NULL);
+INSERT INTO Employee VALUES(108 , 'Ziling' , 'Xu' , '10-Nov-1996' , '01-Dec-2017' , 104 , NULL);
+INSERT INTO Employee VALUES(109 , 'Miller' , 'Sarah' , '30-Dec-1993' , '06-Jun-2018' , 102 , NULL);
+INSERT INTO Employee VALUES(110 , 'Vasa' , 'Maitri' , '05-Jan-1994' , '05-Sep-2018' , 104 , NULL);
+INSERT INTO Employee VALUES(111 , 'Clay' , 'Karen' , '03-Jul-1992' , '02-Nov-2018' , 104 , NULL);
+INSERT INTO Employee VALUES(112 , 'Gupta' , 'Yash' , '03-Apr-1995' , '15-Oct-2019' , 103 , NULL);
+INSERT INTO Employee VALUES(113 , 'Kosyrkov' , 'Cassie' , '02-Oct-1994' , '12-Nov-2019' , 102 , NULL);
+
+INSERT INTO Department VALUES(1000 , 'Administration' , 'Room A301' , '412-123-4567' , 105);
+INSERT INTO Department VALUES(1001 , 'Advisory' , 'Room B007-B013' , '412-123-7519' , 102);
+INSERT INTO Department VALUES(1002 , 'IT Services' , 'Room B020-B027' , '412-123-4567' , 103);
+INSERT INTO Department VALUES(1003 , 'Banking' , 'Room B055-B059' , '412-123-3532' , 104);
+INSERT INTO Department VALUES(1004 , 'Executive' , 'Room A001' , '412-425-4567' , 101);
+
+UPDATE Employee SET Dept_Code=1004 WHERE Emp_Num=101;
+UPDATE Employee SET Dept_Code=1001 WHERE Emp_Num=102;
+UPDATE Employee SET Dept_Code=1002 WHERE Emp_Num=103;
+UPDATE Employee SET Dept_Code=1003 WHERE Emp_Num=104;
+UPDATE Employee SET Dept_Code=1000 WHERE Emp_Num=105;
+UPDATE Employee SET Dept_Code=1000 WHERE Emp_Num=106;
+UPDATE Employee SET Dept_Code=1002 WHERE Emp_Num=107;
+UPDATE Employee SET Dept_Code=1003 WHERE Emp_Num=108;
+UPDATE Employee SET Dept_Code=1001 WHERE Emp_Num=109;
+UPDATE Employee SET Dept_Code=1003 WHERE Emp_Num=110;
+UPDATE Employee SET Dept_Code=1003 WHERE Emp_Num=111;
+UPDATE Employee SET Dept_Code=1002 WHERE Emp_Num=112;
+UPDATE Employee SET Dept_Code=1001 WHERE Emp_Num=113;
+
+INSERT INTO Project VALUES(10001 , 'Apple IT Project' , '07-Jan-2017' , 500000 , 1002 , 10);
+INSERT INTO Project VALUES(10002 , 'PNC Banking Project' , '09-May-2017' , 250000 , 1003 , 20);
+INSERT INTO Project VALUES(10003 , 'Giant Eagle Advisory Project' , '13-Oct-2017' , 125000 , 1001 , 30);
+INSERT INTO Project VALUES(10004 , 'Microsoft IT Project 1' , '01-Feb-2018' , 1200000 , 1002 , 40);
+INSERT INTO Project VALUES(10005 , 'Microsoft IT Project 2' , '03-Jun-2018' , NULL , 1002 , 40);
+INSERT INTO Project VALUES(10006 , 'Cerner Advisory Project' , '11-Jul-2018' , 250000 , 1001 , 50);
+INSERT INTO Project VALUES(10007 , 'Palantir Banking Project 1' , '05-Oct-2018' , 750000 , 1003 , 60);
+INSERT INTO Project VALUES(10008 , 'Palantir Banking Project 2' , '25-Feb-2019' , 300000 , 1003 , 60);
+INSERT INTO Project VALUES(10009 , 'Salesforce IT Project' , '15-Aug-2019' , NULL , 1002 , 70);
+INSERT INTO Project VALUES(10010 , 'Capital One Banking Project' , '28-Oct-2019' , NULL , 1003 , 80);
+
+INSERT INTO Assignment VALUES(1001 , 10001 , 103 , '07-Jan-2017' , '31-Jan-2017' , 100);
+INSERT INTO Assignment VALUES(1002 , 10001 , 103 , '01-Feb-2017' , '28-Feb-2017' , 120);
+INSERT INTO Assignment VALUES(1003 , 10001 , 103 , '01-Mar-2017' , '31-Mar-2017' , 130);
+INSERT INTO Assignment VALUES(1004 , 10001 , 107 , '07-Jan-2017' , '31-Jan-2017' , 105);
+INSERT INTO Assignment VALUES(1005 , 10001 , 107 , '01-Feb-2017' , '28-Feb-2017' , 140);
+INSERT INTO Assignment VALUES(1006 , 10001 , 107 , '01-Mar-2017' , '31-Mar-2017' , 120);
+INSERT INTO Assignment VALUES(1007 , 10002 , 104 , '09-May-2017' , '31-May-2017' , 105);
+INSERT INTO Assignment VALUES(1008 , 10002 , 104 , '01-Jun-2017' , '30-Jun-2017' , 150);
+INSERT INTO Assignment VALUES(1009 , 10002 , 104 , '01-Jul-2017' , '15-Jul-2017' , 70);
+INSERT INTO Assignment VALUES(1010 , 10002 , 110 , '01-Jun-2017' , '30-Jun-2017' , 140);
+INSERT INTO Assignment VALUES(1011 , 10002 , 110 , '01-Jul-2017' , '31-Jul-2017' , 130);
+INSERT INTO Assignment VALUES(1012 , 10002 , 110 , '01-Aug-2017' , '25-Aug-2017' , 120);
+INSERT INTO Assignment VALUES(1013 , 10003 , 102 , '13-Oct-2017' , '31-Oct-2017' , 80);
+INSERT INTO Assignment VALUES(1014 , 10003 , 102 , '01-Nov-2017' , '30-Nov-2017' , 130);
+INSERT INTO Assignment VALUES(1015 , 10003 , 102 , '01-Dec-2017' , '23-Dec-2017' , 120);
+INSERT INTO Assignment VALUES(1016 , 10004 , 103 , '01-Feb-2018' , '28-Feb-2018' , 120);
+INSERT INTO Assignment VALUES(1017 , 10004 , 103 , '01-Mar-2018' , '31-Mar-2018' , 130);
+INSERT INTO Assignment VALUES(1018 , 10004 , 103 , '01-Apr-2018' , '30-Apr-2018' , 90);
+INSERT INTO Assignment VALUES(1019 , 10005 , 103 , '03-Jun-2018' , '26-Jun-2018' , 105);
+INSERT INTO Assignment VALUES(1020 , 10005 , 103 , '05-Nov-2019' , NULL , NULL);
+INSERT INTO Assignment VALUES(1021 , 10005 , 107 , '05-Nov-2019' , NULL , NULL);
+INSERT INTO Assignment VALUES(1022 , 10006 , 102 , '11-Jul-2018' , '31-Jul-2018' , 100);
+INSERT INTO Assignment VALUES(1023 , 10006 , 102 , '01-Aug-2018' , '28-Aug-2018' , 120);
+INSERT INTO Assignment VALUES(1024 , 10006 , 102 , '05-Jan-2019' , '31-Jan-2019' , 90);
+INSERT INTO Assignment VALUES(1025 , 10006 , 102 , '01-Feb-2019' , '15-Feb-2019' , 60);
+INSERT INTO Assignment VALUES(1026 , 10006 , 109 , '05-Jan-2019' , '31-Jan-2019' , 90);
+INSERT INTO Assignment VALUES(1027 , 10006 , 109 , '01-Feb-2019' , '15-Feb-2019' , 70);
+INSERT INTO Assignment VALUES(1028 , 10007 , 108 , '05-Oct-2018' , '31-Oct-2018' , 110);
+INSERT INTO Assignment VALUES(1029 , 10007 , 108 , '01-Nov-2018' , '23-Nov-2018' , 100);
+INSERT INTO Assignment VALUES(1030 , 10008 , 104 , '25-Feb-2019' , '28-Feb-2019' , 20);
+INSERT INTO Assignment VALUES(1031 , 10008 , 104 , '01-Mar-2019' , '31-Mar-2019' , 140);
+INSERT INTO Assignment VALUES(1032 , 10008 , 104 , '01-Apr-2019' , '30-Apr-2019' , 130);
+INSERT INTO Assignment VALUES(1033 , 10008 , 104 , '01-May-2019' , '11-May-2019' , 50);
+INSERT INTO Assignment VALUES(1034 , 10009 , 103 , '15-Aug-2019' , '31-Aug-2019' , 70);
+INSERT INTO Assignment VALUES(1035 , 10009 , 103 , '01-Sep-2019' , '10-Sep-2019' , 50);
+INSERT INTO Assignment VALUES(1036 , 10009 , 103 , '07-Nov-2019' , NULL , NULL);
+INSERT INTO Assignment VALUES(1037 , 10009 , 107 , '15-Aug-2019' , '31-Aug-2019' , 60);
+INSERT INTO Assignment VALUES(1038 , 10009 , 107 , '01-Sep-2019' , '10-Sep-2019' , 40);
+INSERT INTO Assignment VALUES(1039 , 10010 , 108 , '28-Oct-2019' , '31-Oct-2019' , 15);
+INSERT INTO Assignment VALUES(1040 , 10010 , 108 , '01-Nov-2019' , '30-Nov-2019' , 120);
+INSERT INTO Assignment VALUES(1041 , 10010 , 108 , '01-Dec-2019' , NULL , NULL);
+INSERT INTO Assignment VALUES(1042 , 10010 , 104 , '28-Oct-2019' , '31-Oct-2019' , 15);
+INSERT INTO Assignment VALUES(1043 , 10010 , 104 , '01-Nov-2019' , '30-Nov-2019' , 110);
+INSERT INTO Assignment VALUES(1044 , 10010 , 104 , '01-Dec-2019' , NULL , NULL);
+INSERT INTO Assignment VALUES(1045 , 10010 , 110 , '28-Oct-2019' , '31-Oct-2019' , 15);
+INSERT INTO Assignment VALUES(1046 , 10010 , 110 , '01-Nov-2019' , '30-Nov-2019' , 130);
+INSERT INTO Assignment VALUES(1047 , 10010 , 110 , '01-Dec-2019' , NULL , NULL);
+
+INSERT INTO Training VALUES(10 , 2 , 102 , '01-Jan-2015' , 'Data Analysis Course' , 'Good Progress ');
+INSERT INTO Training VALUES(11 , 6 , 103 , '05-May-2015' , 'Big Data Technical Training' , 'Good Progress ');
+INSERT INTO Training VALUES(12 , 5 , 104 , '02-Jul-2016' , 'Tableau Workshop' , 'Good Progress ');
+INSERT INTO Training VALUES(13 , 7 , 107 , '15-Nov-2017' , 'Deep Learning Workshop' , 'Proficiency Achieved');
+INSERT INTO Training VALUES(14 , 3 , 108 , '15-Feb-2018' , 'Business Intelligence Course' , 'Proficiency Achieved');
+INSERT INTO Training VALUES(15 , 5 , 109 , '05-Jul-2018' , 'Tableau Training' , 'Proficiency Achieved');
+INSERT INTO Training VALUES(16 , 5 , 110 , '07-Oct-2018' , 'Tableau Training' , 'Proficiency Achieved');
+INSERT INTO Training VALUES(17 , 1 , 102 , '01-Dec-2018' , 'Negotiation Course' , 'Good Progress ');
+INSERT INTO Training VALUES(18 , 1 , 103 , '02-Dec-2018' , 'Negotiation Workshop' , 'Proficiency Achieved');
+INSERT INTO Training VALUES(19 , 2 , 104 , '03-Dec-2018' , 'Data Analysis Course' , 'Good Progress ');
+INSERT INTO Training VALUES(20 , 2 , 102 , '05-Jun-2019' , 'Data Analysis Training' , 'Proficiency Achieved');
+INSERT INTO Training VALUES(21 , 6 , 103 , '25-Jun-2019' , 'Big Data Training' , 'More Effort Needed');
+INSERT INTO Training VALUES(22 , 5 , 104 , '18-Jul-2019' , 'Tableau Workshop' , 'Proficiency Achieved');
+INSERT INTO Training VALUES(23 , 6 , 111 , '11-Nov-2019' , 'Big Data Training' , 'Proficiency Achieved');
+INSERT INTO Training VALUES(24 , 2 , 112 , '25-Nov-2019' , 'Data Analysis Course' , 'Proficiency Achieved');
+INSERT INTO Training VALUES(25 , 6 , 112 , '11-Nov-2019' , 'Big Data Training' , 'Proficiency Achieved');
+INSERT INTO Training VALUES(26 , 2 , 113 , '25-Nov-2019' , 'Data Analysis Course' , 'Proficiency Achieved');
